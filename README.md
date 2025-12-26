@@ -49,4 +49,5 @@ Where $r_t$ is calculated based on minimizing the distance $d$ between the snake
 - [ ] Comparison of sparse vs. dense reward structures.
 
 ---
-**License:** [Apache 2.0](LICENSE)
+## ⚖️ License
+This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**. This ensures that the software remains free and open-source, and any improvements made by the community must also be released under the same license.
