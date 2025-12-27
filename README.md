@@ -1,53 +1,63 @@
-# AGI Training Ground: From Physics to Reinforcement Learning
+# Reinforcement Learning: From SnakeFrog to Taxi-v3
 
-This repository documents an academic journey into **Artificial General Intelligence (AGI)** and **Reinforcement Learning (RL)**. It begins with custom-built environments to understand physics and modular architecture, progressing toward industry-standard benchmarks like Gymnasium's Taxi and Lunar Lander.
+This repository documents the transition from a custom-built heuristic environment to a standardized Reinforcement Learning (RL) framework using **OpenAI Gymnasium**.
 
 ## 🚀 Project Evolution
 
-The project is structured as a series of evolving environments, each introducing a new layer of AGI complexity:
+### 1. The Homegrown "SnakeFrog"
+Originally, I developed a custom environment called **SnakeFrog**. This phase focused on establishing the **Agent-Environment loop** and building a custom OpenCV-based `VideoRecorder` to visualize the agent's behavior. The logic was primarily heuristic (hand-coded).
 
-### 🟢 FrogSnakeWorldV1: The Base
-- **Concept:** Simple coordinate-based tracking.
-- **Logic:** "Teleportation" movement where snakes move directly toward the target.
-- **Goal:** Establishing the core Pygame rendering and Video Capture pipeline.
+### 2. The Taxi-v3 Substitution
+I swapped the custom engine for the **Gymnasium Taxi-v3** environment. This provided a standardized 5x5 grid challenge with 500 discrete states:
+* **Goal:** Pick up a passenger (Blue) and deliver them to a destination (Magenta).
+* **Rewards:** -1 per step, -10 for illegal actions, and +20 for success.
 
-### 🟡 FrogSnakeWorldV2: Physics & Momentum
-- **Concept:** Introduction of **Control Theory**.
-- **Logic:** Snakes use acceleration, velocity, and friction. They must manage momentum to avoid overshooting the target.
-- **Senses:** Implements relative observations (the snake only "sees" the distance/angle to the prey).
 
-### 🔴 FrogSnakeWorldV3 & V3R: The RL Framework
-- **Concept:** Decoupling the "Brain" from the "Body."
-- **Logic:** The snake no longer knows how to chase; it receives an **Action** (0-3) from an external `Agent` class.
-- **Reward Shaping (V3A):** Implements a **Dense Reward Function** to provide the agent with a "success signal" based on spatial proximity and directional progress.
 
-## 🛠️ Architecture
+### 3. Implementing Q-Learning
+I moved from "guessing" to "learning" by implementing a **Q-Table**. This "brain" stores the expected future rewards for every action in every state.
 
-The code follows a strictly modular design to ensure scalability:
-- **`World` Class:** Handles environment physics and state transitions.
-- **`Agent` Class:** Decides on actions based on observations (currently utilizing `RandomAgentV3`).
-- **`VideoRecorder`:** A robust OpenCV/FFmpeg pipeline for recording and embedding simulations in Google Colab.
-
-## 📊 Objective Function
-The agent's success is measured by a cumulative reward signal:
-$$R = \sum_{t=0}^{T} r_t$$
-Where $r_t$ is calculated based on minimizing the distance $d$ between the snake and the frog:
-- $r = +1.0$ if $\Delta d < 0$ (progress)
-- $r = -1.1$ if $\Delta d \geq 0$ (stagnation/regression)
-- $r = +100$ for target capture.
-
-## 🛠️ Requirements
-- Python 3.x
-- Pygame
-- OpenCV
-- Gymnasium
-- FFmpeg (for video encoding)
-
-## 🏁 Next Steps
-- [ ] Integration with **Gymnasium Taxi-v3**.
-- [ ] Implementation of **Q-Learning** and **Deep Q-Networks (DQN)**.
-- [ ] Comparison of sparse vs. dense reward structures.
+The core learning mechanism is the **Bellman Equation**:
+$$Q(s, a) \leftarrow (1 - \alpha) Q(s, a) + \alpha [R + \gamma \max Q(s', a')]$$
 
 ---
-## ⚖️ License
-This project is licensed under the **GNU General Public License v3.0 (GPL-3.0)**. This ensures that the software remains free and open-source, and any improvements made by the community must also be released under the same license.
+
+## 📊 Sensitivity Analysis (Grid Search)
+
+To understand the "personality" of different agents, I conducted a **Factorial Sensitivity Analysis**. I trained 9 different "brains" (3x3 grid) for 5,000 episodes each, varying the core hyperparameters.
+
+### The Parameters
+* **Alpha ($\alpha$):** The Learning Rate. Determines how much the agent values new information vs. old memory.
+* **Gamma ($\gamma$):** The Discount Factor. Determines the "time horizon" (Short-sighted vs. Visionary).
+
+### The Metrics
+Each brain was tested over **20 independent trips** to measure:
+1. **Avg_Success_Reward:** How efficiently the taxi navigates (higher is better).
+2. **Truncated_Count:** Reliability (how many times the agent failed to finish within 200 steps).
+
+| Alpha | Gamma | Avg_Success_Reward | Truncated_Count | Success Rate |
+| :--- | :--- | :--- | :--- | :--- |
+| 0.1 | 0.9 | +12.4 | 0 | 100% |
+| 0.5 | 0.5 | +4.2 | 2 | 90% |
+| 0.9 | 0.1 | -185.0 | 14 | 30% |
+
+
+
+---
+
+## 🛠️ Technical Implementation
+
+### Custom HUD Video Recording
+I modified the `VideoRecorder` class to act as a diagnostic tool. Using `cv2.putText`, the recorder overlays:
+* **Current Step Count**
+* **Cumulative Reward**
+* **Trip Status (Success/Failure)**
+
+This allowed for "Failure Analysis," where I captured videos of **Truncated runs (-200 reward)** to identify infinite loops or "Wall-Humping" behaviors in the agent's logic.
+
+### Automated Data Pipeline
+The project utilizes **Pandas** to store results from the sensitivity analysis, allowing for quick pivot-table generation and performance visualization.
+
+```python
+# Analysis Pivot Table Example
+df.pivot(index='Alpha', columns='Gamma', values='Avg_Success_Reward')
