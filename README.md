@@ -1,63 +1,38 @@
-# Reinforcement Learning: From SnakeFrog to Taxi-v3
+# Reinforcement Learning: The "City Expert" World Model (Taxi77)
 
-This repository documents the transition from a custom-built heuristic environment to a standardized Reinforcement Learning (RL) framework using **OpenAI Gymnasium**.
+This repository documents the evolution of a Reinforcement Learning agent, moving from a basic heuristic loop to a custom **7x7 World Model** featuring specialized drivers for distinct urban maps.
 
 ## 🚀 Project Evolution
 
-### 1. The Homegrown "SnakeFrog"
-Originally, I developed a custom environment called **SnakeFrog**. This phase focused on establishing the **Agent-Environment loop** and building a custom OpenCV-based `VideoRecorder` to visualize the agent's behavior. The logic was primarily heuristic (hand-coded).
-
-### 2. The Taxi-v3 Substitution
-I swapped the custom engine for the **Gymnasium Taxi-v3** environment. This provided a standardized 5x5 grid challenge with 500 discrete states:
-* **Goal:** Pick up a passenger (Blue) and deliver them to a destination (Magenta).
-* **Rewards:** -1 per step, -10 for illegal actions, and +20 for success.
-
-
-
-### 3. Implementing Q-Learning
-I moved from "guessing" to "learning" by implementing a **Q-Table**. This "brain" stores the expected future rewards for every action in every state.
-
-The core learning mechanism is the **Bellman Equation**:
+### 1. SnakeFrog & Taxi-v3
+* **SnakeFrog:** Established the basic Agent-Environment loop and custom OpenCV `VideoRecorder`.
+* **Taxi-v3:** Transitioned to the Gymnasium standard 5x5 grid. Implemented **Q-Learning** using the Bellman Equation:
 $$Q(s, a) \leftarrow (1 - \alpha) Q(s, a) + \alpha [R + \gamma \max Q(s', a')]$$
 
----
-
-## 📊 Sensitivity Analysis (Grid Search)
-
-To understand the "personality" of different agents, I conducted a **Factorial Sensitivity Analysis**. I trained 9 different "brains" (3x3 grid) for 5,000 episodes each, varying the core hyperparameters.
-
-### The Parameters
-* **Alpha ($\alpha$):** The Learning Rate. Determines how much the agent values new information vs. old memory.
-* **Gamma ($\gamma$):** The Discount Factor. Determines the "time horizon" (Short-sighted vs. Visionary).
-
-### The Metrics
-Each brain was tested over **20 independent trips** to measure:
-1. **Avg_Success_Reward:** How efficiently the taxi navigates (higher is better).
-2. **Truncated_Count:** Reliability (how many times the agent failed to finish within 200 steps).
-
-| Alpha | Gamma | Avg_Success_Reward | Truncated_Count | Success Rate |
-| :--- | :--- | :--- | :--- | :--- |
-| 0.1 | 0.9 | +12.4 | 0 | 100% |
-| 0.5 | 0.5 | +4.2 | 2 | 90% |
-| 0.9 | 0.1 | -185.0 | 14 | 30% |
-
-
+### 2. Sensitivity Analysis (Hyperparameter Tuning)
+Conducted a grid search on **Alpha** (Learning Rate) and **Gamma** (Discount Factor) to identify the optimal "agent personality."
+* **Result:** High-stability agents (100% success) were achieved with a low Alpha (0.1) and high Gamma (0.9).
 
 ---
 
-## 🛠️ Technical Implementation
+## 🏙️ The "Taxi77" World Model
+The final phase, **Taxi77**, moves beyond generic training to **Spatial Specialization**.
 
-### Custom HUD Video Recording
-I modified the `VideoRecorder` class to act as a diagnostic tool. Using `cv2.putText`, the recorder overlays:
-* **Current Step Count**
-* **Cumulative Reward**
-* **Trip Status (Success/Failure)**
+### Multi-City Parameterization
+I developed four symbolic maps—**Arrah, Balia, Chappra, and Dhanbad**—and trained four expert drivers: **Arun, Bimal, Chitra, and Dilip**. 
 
-This allowed for "Failure Analysis," where I captured videos of **Truncated runs (-200 reward)** to identify infinite loops or "Wall-Humping" behaviors in the agent's logic.
+* **Localized Intelligence:** Each driver is an "expert" in their own city map but fails in others. This demonstrates that the agent has encoded a **World Model** (a specific spatial reality) rather than just a general "driving" script.
+* **Garage Start:** Every mission begins at a fixed "Garage" at (3, 3) to allow for consistent pathfinding comparison across different maps.
+* **Occupancy HUD:** The taxi dynamically displays its status: **"V"** (Vacant) while searching and **"P"** (Passenger) once the passenger is secured.
 
-### Automated Data Pipeline
-The project utilizes **Pandas** to store results from the sensitivity analysis, allowing for quick pivot-table generation and performance visualization.
 
-```python
-# Analysis Pivot Table Example
-df.pivot(index='Alpha', columns='Gamma', values='Avg_Success_Reward')
+
+### Technical Implementation
+* **Environment:** Custom `MarsTaxi7x7` class supporting dynamic `wall_offsets`.
+* **Visualization:** OpenCV (cv2) for real-time status overlays, wall rendering, and "Mission Success" frames.
+* **Evaluation:** Used Pandas to track `Avg_Success_Reward` and `Truncated_Count` to identify where specific drivers "got lost" in foreign cities.
+
+---
+
+## 🛰️ Next Step: Lunar Lander
+Having mastered discrete grids, the next mission is **Lunar Lander**. This marks the transition from spatial "Mental Maps" to **Continuous State Spaces**, where the agent must master the physics of gravity and velocity using Deep Q-Networks (DQN).
